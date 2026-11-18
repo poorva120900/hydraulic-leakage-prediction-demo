@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hydraulic Leakage Prediction</title>
+<style>
+:root{--ink:#18304f;--muted:#62748a;--line:#dce5ef;--paper:#fff;--bg:#f3f7fb;--blue:#3977b8;--teal:#14867e;--gold:#d9902f;--green:#23765f;--red:#a9564e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.page{max-width:1100px;margin:auto;padding:30px 22px 50px}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:800;color:var(--teal)}
+h1{font-size:clamp(29px,4vw,42px);letter-spacing:-.035em;line-height:1.12;margin:8px 0}.intro{max-width:760px;color:var(--muted);font-size:17px;margin:0 0 23px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 24px rgba(26,52,83,.06);padding:21px}
+h2{font-size:19px;line-height:1.25;margin:0 0 5px;letter-spacing:-.015em}.note{color:var(--muted);font-size:13px;margin:0 0 16px}
+.prediction{display:grid;grid-template-columns:.86fr 1.14fr;gap:18px;border-top:4px solid var(--teal);margin:20px 0}
+label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}select{width:100%;padding:11px 12px;border:1px solid #cbd7e5;border-radius:9px;background:#fff;font:inherit;color:var(--ink)}
+.readings{display:grid;gap:9px;margin-top:15px}.reading{display:flex;justify-content:space-between;gap:10px;background:#f6f9fc;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:12px}.reading span{color:var(--muted)}.reading b{font-variant-numeric:tabular-nums}
+.result{background:#f3f8fb;border:1px solid #d8e7ef;border-radius:12px;padding:16px}.result-label{color:var(--muted);font-size:12px}.result-class{font-size:27px;line-height:1.2;font-weight:800;margin:3px 0 5px}.matched{color:var(--green);font-weight:700;font-size:12px}.missed{color:#96600b;font-weight:700;font-size:12px}
+.actual{margin:7px 0 14px;color:var(--muted);font-size:12px}.prob-row{display:grid;grid-template-columns:105px 1fr 43px;gap:9px;align-items:center;margin:11px 0;font-size:12px}.track{height:9px;background:#e9eff5;border-radius:10px;overflow:hidden}.fill{height:100%;border-radius:10px}.prob-number{text-align:right;font-weight:750;font-variant-numeric:tabular-nums}
+.explain{font-size:12px;color:var(--muted);margin:12px 0 0}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin:15px 0}.metric{padding:17px;border:1px solid var(--line);border-radius:13px;background:#fff}.metric span{display:block;color:var(--muted);font-size:12px;font-weight:650}.metric strong{display:block;font-size:27px;letter-spacing:-.03em;margin:4px 0 0}.metric small{color:var(--muted);font-size:11px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:15px 0}.folds{width:100%;border-collapse:collapse;font-size:13px}.folds th,.folds td{text-align:left;padding:9px;border-bottom:1px solid var(--line)}.folds th{color:var(--muted);font-size:11px;background:#f6f8fb}.folds td:last-child,.folds th:last-child{text-align:right;font-variant-numeric:tabular-nums}.folds td:nth-child(2),.folds th:nth-child(2){text-align:right;font-variant-numeric:tabular-nums}
+.signals{display:grid;gap:12px}.signal{display:grid;grid-template-columns:35px 1fr 62px;gap:10px;align-items:center}.rank{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#e7f3f1;color:#14766f;font-size:12px;font-weight:800}.signal-name{font-weight:750;font-size:14px}.signal-tech{font-size:11px;color:var(--muted);font-weight:500}.signal-score{text-align:right;font-size:13px;font-weight:750;font-variant-numeric:tabular-nums}.signal-bar{height:6px;background:#edf1f6;border-radius:9px;margin-top:6px;overflow:hidden}.signal-bar i{display:block;height:100%;border-radius:9px;background:var(--blue)}
+.class-table{border-collapse:collapse;width:100%;font-size:13px}.class-table th,.class-table td{padding:10px;border-bottom:1px solid var(--line);text-align:left}.class-table th{color:var(--muted);font-size:11px;background:#f6f8fb}.class-table td:nth-child(2){font-weight:750}.class-table td:last-child{color:var(--muted)}
+.flow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.flow-step{background:#f6f9fc;border:1px solid var(--line);border-radius:11px;padding:13px}.flow-step b{display:block;font-size:14px;margin:3px 0}.flow-step span{font-size:12px;color:var(--muted)}.stepnum{font-size:10px!important;color:var(--teal)!important;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.details{margin-top:12px}.details summary{cursor:pointer;color:var(--blue);font-weight:700;font-size:13px}.details p{font-size:12px;color:var(--muted);margin:8px 0 0}
+.callout{margin-top:15px;padding:12px 14px;border-left:3px solid var(--gold);background:#fbf8f1;color:#6f5a38;font-size:12px;border-radius:0 8px 8px 0}
+footer{font-size:11px;color:#77869a;margin:20px 2px 0}footer a{color:var(--blue)}
+@media(max-width:760px){.prediction,.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.page{padding:23px 14px 38px}}
+@media(max-width:480px){.metrics{grid-template-columns:1fr}.card{padding:16px}.flow{grid-template-columns:1fr}.prob-row{grid-template-columns:91px 1fr 40px}}
+</style>
+</head>
+<body>
+<main class="page">
+  <div class="eyebrow">Sensor data → model prediction</div>
+  <h1>Can sensor readings reveal pump leakage?</h1>
+  <p class="intro">Choose a measured 60-second cycle. The Random Forest uses its sensor readings to classify pump leakage as <b>none, weak, or severe</b>.</p>
+
+  <section class="card prediction">
+    <div>
+      <h2>See a prediction</h2>
+      <p class="note">Each choice is a held-out test cycle from Fold 1.</p>
+      <label for="sampleSelect">Choose a sample cycle</label>
+      <select id="sampleSelect"></select>
+      <div class="readings" id="readings"></div>
+      <p class="explain">The display highlights three important readings. The model uses all 44 sensor summaries.</p>
+    </div>
+    <div class="result">
+      <div class="result-label">Model prediction</div>
+      <div id="resultClass" class="result-class"></div>
+      <div id="matchStatus"></div>
+      <div id="actualLabel" class="actual"></div>
+      <div id="probabilities"></div>
+    </div>
+  </section>
+
+  <section class="metrics" aria-label="Model evaluation summary">
+    <div class="metric"><span>Average macro F1</span><strong>0.976</strong><small>Across five grouped validation folds</small></div>
+    <div class="metric"><span>Average balanced accuracy</span><strong>0.976</strong><small>Across five grouped validation folds</small></div>
+    <div class="metric"><span>Cycles analyzed</span><strong>1,449</strong><small>Stable cycles, out of 2,205 total</small></div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Which readings mattered most?</h2>
+      <p class="note">The model’s three highest-ranked sensor summaries, explained in plain language.</p>
+      <div class="signals" id="signals"></div>
+      <div class="callout">The model combines these with 41 other summaries. Importance shows which inputs helped its decisions; it does not show cause and effect.</div>
+    </section>
+
+    <section class="card">
+      <h2>How did it perform?</h2>
+      <p class="note">Macro F1 by grouped validation fold (higher is better).</p>
+      <table class="folds">
+        <thead><tr><th>Fold</th><th>Macro F1</th><th>Balanced accuracy</th></tr></thead>
+        <tbody id="foldRows"></tbody>
+      </table>
+      <p class="explain">The same full component-condition profile was kept together in each split; group overlap was zero in all folds.</p>
+    </section>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Fold 1: correct classifications</h2>
+      <p class="note">A simple view of the 290 held-out cycles.</p>
+      <table class="class-table">
+        <thead><tr><th>Recorded condition</th><th>Correct</th><th>Other predictions</th></tr></thead>
+        <tbody>
+          <tr><td>No leakage</td><td>90 of 90</td><td>None</td></tr>
+          <tr><td>Weak leakage</td><td>86 of 100</td><td>14 classified as severe</td></tr>
+          <tr><td>Severe leakage</td><td>97 of 100</td><td>3 classified as weak</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>How the prediction is made</h2>
+      <p class="note">From raw signals to a leakage-level prediction.</p>
+      <div class="flow">
+        <div class="flow-step"><span class="stepnum">1 · Read</span><b>One sensor cycle</b><span>Pressure, motor power, and temperature signals over 60 seconds</span></div>
+        <div class="flow-step"><span class="stepnum">2 · Summarize</span><b>44 sensor features</b><span>Average, variation, minimum, and maximum for 11 channels</span></div>
+        <div class="flow-step"><span class="stepnum">3 · Predict</span><b>Leakage level</b><span>No leakage, weak leakage, or severe leakage</span></div>
+      </div>
+      <details class="details">
+        <summary>Model settings</summary>
+        <p>scikit-learn RandomForestClassifier · 300 trees · maximum depth 8 · minimum leaf size 3 · five-fold StratifiedGroupKFold validation.</p>
+      </details>
+    </section>
+  </div>
+
+  <footer>
+    Data: <a href="https://archive.ics.uci.edu/dataset/447/condition-monitoring-of-hydraulic-systems" target="_blank" rel="noreferrer">UCI Condition Monitoring of Hydraulic Systems (ZeMA)</a>. EPS1 is motor power, measured in watts. Each sample shows a measured cycle and its model prediction.
+  </footer>
+</main>
+<script>
+const samples = [
+  {power:2634.862, pressure3:1.070, pressure1:189.75, actual:2, predicted:2, p:[0.005,0.160,0.835]},
+  {power:2541.455, pressure3:1.992, pressure1:191.68, actual:0, predicted:0, p:[0.989,0.011,0.000]},
+  {power:2623.309, pressure3:1.121, pressure1:189.91, actual:1, predicted:2, p:[0.046,0.435,0.519]},
+  {power:2469.036, pressure3:1.759, pressure1:190.72, actual:1, predicted:1, p:[0.056,0.756,0.188]},
+  {power:2604.222, pressure3:1.123, pressure1:189.88, actual:1, predicted:1, p:[0.061,0.834,0.105]},
+];
+const names=["No leakage","Weak leakage","Severe leakage"];
+const select=document.getElementById("sampleSelect");
+samples.forEach((s,i)=>{const option=document.createElement("option");option.value=i;option.textContent="Sample "+(i+1);select.appendChild(option);});
+function showSample(index){
+  const s=samples[index], match=s.actual===s.predicted;
+  document.getElementById("readings").innerHTML=
+    '<div class="reading"><span>Average motor power</span><b>'+s.power.toFixed(3)+' W</b></div>'+
+    '<div class="reading"><span>Average pressure · sensor 3</span><b>'+s.pressure3.toFixed(3)+' bar</b></div>'+
+    '<div class="reading"><span>Peak pressure · sensor 1</span><b>'+s.pressure1.toFixed(2)+' bar</b></div>';
+  document.getElementById("resultClass").textContent=names[s.predicted];
+  document.getElementById("matchStatus").className=match?"matched":"missed";
+  document.getElementById("matchStatus").textContent=match?"Matches the recorded condition":"Differs from the recorded condition";
+  document.getElementById("actualLabel").textContent="Recorded condition: "+names[s.actual];
+  document.getElementById("probabilities").innerHTML=s.p.map((value,i)=>
+    '<div class="prob-row"><span>'+names[i]+'</span><div class="track"><div class="fill" style="width:'+(value*100).toFixed(1)+'%;background:'+["#3977b8","#d9902f","#14867e"][i]+'"></div></div><b class="prob-number">'+(value*100).toFixed(1)+'%</b></div>'
+  ).join("");
+}
+select.addEventListener("change",()=>showSample(Number(select.value)));
+showSample(0);
+
+const signalData=[
+  {name:"Average motor power",code:"EPS1 mean",score:.111052},
+  {name:"Average pressure · sensor 3",code:"PS3 mean",score:.109588},
+  {name:"Peak pressure · sensor 1",code:"PS1 maximum",score:.106873},
+];
+document.getElementById("signals").innerHTML=signalData.map((s,i)=>
+  '<div class="signal"><div class="rank">'+(i+1)+'</div><div><div class="signal-name">'+s.name+'</div><div class="signal-tech">'+s.code+' · relative importance</div><div class="signal-bar"><i style="width:'+(s.score/signalData[0].score*100).toFixed(1)+'%"></i></div></div><div class="signal-score">'+(s.score*100).toFixed(1)+'%</div></div>'
+).join("");
+
+const foldData=[
+  [1,.943,.943],[2,.996,.997],[3,1.000,1.000],[4,.990,.990],[5,.951,.949]
+];
+document.getElementById("foldRows").innerHTML=foldData.map(f=>
+  '<tr><td>'+f[0]+'</td><td>'+f[1].toFixed(3)+'</td><td>'+f[2].toFixed(3)+'</td></tr>'
+).join("");
+</script>
+</body>
+</html>
